@@ -1,0 +1,14 @@
+[project]
+name = "lcc"
+version = "0.1.0"
+description = "CLI agent loop: talk to a local OpenAI-compatible model server and let it drive bash tool calls."
+requires-python = ">=3.14"
+dependencies = [
+    "requests==2.32.5",
+    "rich==15.0.0",
+]
+
+# Virtual uv project: no build-system, so `uv sync` only installs the
+# dependencies above into .venv. Run the tool with:
+#   uv run python agent_loop.py
+#   python .venv/bin/python agent_loop.py
