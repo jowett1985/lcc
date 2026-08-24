@@ -79,3 +79,46 @@ def execute_tool_call(
         result,
         ensure_ascii=False,
     )
+
+
+def execute_bash(
+    command: str,
+    timeout: int = 30,
+) -> dict[str, Any]:
+    """
+    Execute a bash command and return stdout/stderr/exit code.
+
+    WARNING:
+    This executes arbitrary commands with the privileges of
+    the Python process. Only expose this to a trusted model/user.
+    """
+
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            executable="/bin/bash",
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return {
+            "exit_code": result.returncode,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "exit_code": -1,
+            "stdout": "",
+            "stderr": (
+                f"Command timed out after "
+                f"{timeout} seconds"
+            ),
+        }
+    except Exception as e:
+        return {
+            "exit_code": -1,
+            "stdout": "",
+            "stderr": str(e),
+        }

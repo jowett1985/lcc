@@ -130,7 +130,7 @@ def chat_with_tools(
                 if event["type"] == "content":
                     print(event["content"], end="", flush=True)
                 elif event["type"] == "reasoning":
-                    pass
+                    print(event["content"], end="", flush=True)
         print()
 
         # ====================================================

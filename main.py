@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.console import Console
 from rich import box
 from agent_loop.agent import chat_with_tools, ChatCompletionsStreamClient
-from agent_loop.tool_calls import ToolRegistry
+from agent_loop.tool_calls import ToolRegistry, execute_bash
 from agent_loop.constants import MODEL, TOOLS, BASE_URL, TIMEOUT
 
 
@@ -18,10 +18,7 @@ def main():
 
     client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT)
     registry = ToolRegistry()
-    registry.register(
-        "bash",
-        TOOLS
-    )
+    registry.register("bash", execute_bash)
 
     # REPL.
     print("Enter a task, press Enter to run. Type q to quit.\n")
