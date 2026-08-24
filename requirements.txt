@@ -1,5 +1,5 @@
 # Dependencies for agent_loop.py — install with:
 #   uv sync                    (uses uv.lock / pyproject)
 #   uv pip install -r requirements.txt
-requests==2.32.5
+httpx==0.28.1
 rich==15.0.0
