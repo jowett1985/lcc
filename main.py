@@ -26,7 +26,7 @@ def main():
     while True:
         try:
             query = input("\033[36magent >> \033[0m")
-        except (EOFError, KeyboardInterrupt):
+        except EOFError, KeyboardInterrupt:
             break
         if query.strip().lower() in ("q", "exit", ""):
             break

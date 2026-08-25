@@ -25,9 +25,7 @@ class ToolRegistry:
         arguments: dict[str, Any],
     ) -> Any:
         if name not in self._tools:
-            raise ValueError(
-                f"Unknown tool: {name}"
-            )
+            raise ValueError(f"Unknown tool: {name}")
         return self._tools[name](**arguments)
 
 
@@ -46,17 +44,11 @@ def execute_tool_call(
     # Parse JSON arguments
     # --------------------------------------------------------
     try:
-        arguments = json.loads(
-            raw_arguments
-        )
+        arguments = json.loads(raw_arguments)
     except json.JSONDecodeError as e:
         # This generally means that the model generated
         # malformed JSON arguments.
-        raise ValueError(
-            f"Invalid arguments for "
-            f"tool '{name}': "
-            f"{raw_arguments}"
-        ) from e
+        raise ValueError(f"Invalid arguments for tool '{name}': {raw_arguments}") from e
 
     # --------------------------------------------------------
     # Execute
@@ -111,10 +103,7 @@ def execute_bash(
         return {
             "exit_code": -1,
             "stdout": "",
-            "stderr": (
-                f"Command timed out after "
-                f"{timeout} seconds"
-            ),
+            "stderr": (f"Command timed out after {timeout} seconds"),
         }
     except Exception as e:
         return {

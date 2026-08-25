@@ -1,13 +1,10 @@
 from typing import Any, Optional
 
-class ToolCallAccumulator:
 
+class ToolCallAccumulator:
     def __init__(self):
         # index -> complete tool call
-        self.tool_calls: dict[
-            int,
-            dict[str, Any]
-        ] = {}
+        self.tool_calls: dict[int, dict[str, Any]] = {}
 
     def add(
         self,
@@ -43,9 +40,7 @@ class ToolCallAccumulator:
         index = delta.get("index")
 
         if index is None:
-            raise ValueError(
-                "Tool call delta has no index"
-            )
+            raise ValueError("Tool call delta has no index")
 
         if index not in self.tool_calls:
             self.tool_calls[index] = {
@@ -81,41 +76,27 @@ class ToolCallAccumulator:
 
         # Function name
         if function_delta.get("name"):
-            current["function"]["name"] += (
-                function_delta["name"]
-            )
+            current["function"]["name"] += function_delta["name"]
 
         # Function arguments
         if function_delta.get("arguments"):
-            current["function"]["arguments"] += (
-                function_delta["arguments"]
-            )
+            current["function"]["arguments"] += function_delta["arguments"]
 
     def get_tool_calls(
         self,
     ) -> list[dict[str, Any]]:
-        return [
-            self.tool_calls[index]
-            for index in sorted(
-                self.tool_calls.keys()
-            )
-        ]
+        return [self.tool_calls[index] for index in sorted(self.tool_calls.keys())]
 
 
 class StreamAccumulator:
-
     def __init__(self):
         self.id: Optional[str] = None
         self.model: Optional[str] = None
         self.content = ""
         self.reasoning_content = ""
-        self.tool_calls = (
-            ToolCallAccumulator()
-        )
+        self.tool_calls = ToolCallAccumulator()
         self.finish_reason: Optional[str] = None
-        self.usage: Optional[
-            dict[str, Any]
-        ] = None
+        self.usage: Optional[dict[str, Any]] = None
 
     def process_chunk(
         self,
@@ -159,71 +140,61 @@ class StreamAccumulator:
         # ----------------------------------------------------
         # Normal text
         # ----------------------------------------------------
-        content = delta.get(
-            "content"
-        )
+        content = delta.get("content")
         if content:
             self.content += content
-            events.append({
-                "type": "content",
-                "content": content,
-            })
+            events.append(
+                {
+                    "type": "content",
+                    "content": content,
+                }
+            )
 
         # ----------------------------------------------------
         # Reasoning
         # ----------------------------------------------------
-        reasoning = delta.get(
-            "reasoning_content"
-        )
+        reasoning = delta.get("reasoning_content")
         if reasoning:
-            self.reasoning_content += (
-                reasoning
+            self.reasoning_content += reasoning
+            events.append(
+                {
+                    "type": "reasoning",
+                    "content": reasoning,
+                }
             )
-            events.append({
-                "type": "reasoning",
-                "content": reasoning,
-            })
 
         # ----------------------------------------------------
         # Tool calls
         # ----------------------------------------------------
 
-        tool_calls = delta.get(
-            "tool_calls"
-        )
+        tool_calls = delta.get("tool_calls")
         if tool_calls:
             for tool_call in tool_calls:
-                self.tool_calls.add(
-                    tool_call
+                self.tool_calls.add(tool_call)
+                events.append(
+                    {
+                        "type": "tool_call_delta",
+                        "index": tool_call.get("index"),
+                        "id": tool_call.get("id"),
+                        "function": tool_call.get(
+                            "function",
+                            {},
+                        ),
+                    }
                 )
-                events.append({
-                    "type": "tool_call_delta",
-                    "index": tool_call.get(
-                        "index"
-                    ),
-                    "id": tool_call.get(
-                        "id"
-                    ),
-                    "function": tool_call.get(
-                        "function",
-                        {},
-                    ),
-                })
 
         # ----------------------------------------------------
         # Finish reason
         # ----------------------------------------------------
-        finish_reason = choice.get(
-            "finish_reason"
-        )
+        finish_reason = choice.get("finish_reason")
         if finish_reason:
-            self.finish_reason = (
-                finish_reason
+            self.finish_reason = finish_reason
+            events.append(
+                {
+                    "type": "finish",
+                    "reason": finish_reason,
+                }
             )
-            events.append({
-                "type": "finish",
-                "reason": finish_reason,
-            })
 
         return events
 
@@ -232,21 +203,13 @@ class StreamAccumulator:
     ) -> dict[str, Any]:
         message: dict[str, Any] = {
             "role": "assistant",
-            "content": (
-                self.content
-                if self.content
-                else None
-            ),
+            "content": (self.content if self.content else None),
         }
 
-        tool_calls = (
-            self.tool_calls.get_tool_calls()
-        )
+        tool_calls = self.tool_calls.get_tool_calls()
 
         if tool_calls:
-            message["tool_calls"] = (
-                tool_calls
-            )
+            message["tool_calls"] = tool_calls
 
         return message
 
@@ -257,14 +220,8 @@ class StreamAccumulator:
             "id": self.id,
             "model": self.model,
             "content": self.content,
-            "reasoning_content": (
-                self.reasoning_content
-            ),
-            "tool_calls": (
-                self.tool_calls.get_tool_calls()
-            ),
-            "finish_reason": (
-                self.finish_reason
-            ),
+            "reasoning_content": (self.reasoning_content),
+            "tool_calls": (self.tool_calls.get_tool_calls()),
+            "finish_reason": (self.finish_reason),
             "usage": self.usage,
         }
