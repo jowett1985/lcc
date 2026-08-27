@@ -17,9 +17,11 @@ class ChatCompletionsStreamClient:
         self,
         base_url: str,
         timeout: float,
+        api_key: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.api_key = api_key
 
     def stream_chat_completion(
         self,
@@ -43,6 +45,8 @@ class ChatCompletionsStreamClient:
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
         }
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
 
         payload: dict[str, Any] = {
             "model": model,
@@ -64,7 +68,13 @@ class ChatCompletionsStreamClient:
                 headers=headers,
                 json=payload,
             ) as response:
-                response.raise_for_status()
+                if response.is_error:
+                    detail = response.read().decode("utf-8", errors="replace")
+                    raise httpx.HTTPStatusError(
+                        f"{response.status_code} response from {url}: {detail}",
+                        request=response.request,
+                        response=response,
+                    )
                 for line in response.iter_lines():
                     # SSE uses blank lines to separate events.
                     if not line:
@@ -94,7 +104,7 @@ def chat_with_tools(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
-    max_tool_rounds: int = 10,
+    max_tool_rounds: int = 1024,
 ) -> dict[str, Any]:
     """
     Complete agent loop.
@@ -195,5 +205,3 @@ def chat_with_tools(
         # ====================================================
         # 6. Loop back to model
         # ====================================================
-
-    raise RuntimeError("Maximum tool-call rounds exceeded")

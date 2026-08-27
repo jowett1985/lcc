@@ -6,7 +6,7 @@ from rich.console import Console
 from rich import box
 from agent_loop.agent import chat_with_tools, ChatCompletionsStreamClient
 from agent_loop.tool_calls import ToolRegistry, execute_bash
-from agent_loop.constants import MODEL, TOOLS, BASE_URL, TIMEOUT
+from agent_loop.constants import MODEL, TOOLS, BASE_URL, OMLX_API_KEY, TIMEOUT
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     table.add_row("directory", os.getcwd())
     console.print(table)
 
-    client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT)
+    client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT, OMLX_API_KEY)
     registry = ToolRegistry()
     registry.register("bash", execute_bash)
 
@@ -26,7 +26,7 @@ def main():
     while True:
         try:
             query = input("\033[36magent >> \033[0m")
-        except EOFError, KeyboardInterrupt:
+        except (EOFError, KeyboardInterrupt):
             break
         if query.strip().lower() in ("q", "exit", ""):
             break
