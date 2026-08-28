@@ -45,7 +45,7 @@ class ChatCompletionsStreamClient:
             "Accept": "text/event-stream",
         }
         if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
+            headers["Authorization"] = self.api_key
 
         payload: dict[str, Any] = {
             "model": model,
@@ -149,7 +149,7 @@ def chat_with_tools(
         # ====================================================
         # 3. Normal assistant response
         # ====================================================
-        if finish_reason != "tool_calls":
+        if not result["tool_calls"] and finish_reason != "tool_calls":
             # Add assistant response to conversation.
             messages.append(accumulator.get_assistant_message())
             return result

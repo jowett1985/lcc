@@ -10,5 +10,5 @@ dependencies = [
 
 # Virtual uv project: no build-system, so `uv sync` only installs the
 # dependencies above into .venv. Run the tool with:
-#   uv run python agent_loop.py
-#   python .venv/bin/python agent_loop.py
+#   uv run python main.py
+#   python .venv/bin/python main.py

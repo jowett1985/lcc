@@ -10,7 +10,6 @@ from agent_loop.constants import (
     MODEL,
     TOOLS,
     BASE_URL,
-    OMLX_API_KEY,
     TIMEOUT,
     SYSTEM,
 )
@@ -25,7 +24,7 @@ def main():
     table.add_row("directory", os.getcwd())
     console.print(table)
 
-    client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT, OMLX_API_KEY)
+    client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT)
     registry = ToolRegistry()
     registry.register("bash", execute_bash)
     printer = Printer()

@@ -1,4 +1,4 @@
-# Dependencies for agent_loop.py — install with:
+# Dependencies for main.py — install with:
 #   uv sync                    (uses uv.lock / pyproject)
 #   uv pip install -r requirements.txt
 httpx==0.28.1
