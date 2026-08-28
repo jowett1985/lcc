@@ -1,14 +1,5 @@
 from rich.console import Console
 
-_printer = None
-
-
-def get_printer() -> Printer:
-    global _printer
-    if _printer is None:
-        _printer = Printer()
-    return _printer
-
 
 class Printer:
     def __init__(self):
@@ -31,3 +22,6 @@ class Printer:
 
     def response(self, text):
         self.console.print(text, end="")
+
+    def newline(self):
+        self.console.print()

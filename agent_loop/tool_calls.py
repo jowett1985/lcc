@@ -1,5 +1,4 @@
 import subprocess
-import os
 import json
 from typing import Any, Callable
 
@@ -73,12 +72,28 @@ def execute_tool_call(
     )
 
 
+# Cap tool output so a single large result (e.g. `cat bigfile`)
+# cannot blow up the model's context window.
+MAX_TOOL_OUTPUT = 8000
+
+
+def _truncate(text: str) -> str:
+    """Keep the head and tail of oversized tool output."""
+    if len(text) <= MAX_TOOL_OUTPUT:
+        return text
+    half = MAX_TOOL_OUTPUT // 2
+    omitted = len(text) - MAX_TOOL_OUTPUT
+    return f"{text[:half]}\n... [truncated {omitted} chars] ...\n{text[-half:]}"
+
+
 def execute_bash(
     command: str,
     timeout: int = 30,
 ) -> dict[str, Any]:
     """
     Execute a bash command and return stdout/stderr/exit code.
+
+    stdout/stderr are truncated to MAX_TOOL_OUTPUT characters.
 
     WARNING:
     This executes arbitrary commands with the privileges of
@@ -96,8 +111,8 @@ def execute_bash(
         )
         return {
             "exit_code": result.returncode,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "stdout": _truncate(result.stdout),
+            "stderr": _truncate(result.stderr),
         }
     except subprocess.TimeoutExpired:
         return {

@@ -4,7 +4,7 @@ from typing import Any, Optional, Iterator
 
 from .accumulators import StreamAccumulator
 from .tool_calls import ToolRegistry, execute_tool_call
-from utils.printer import get_printer
+from utils.printer import Printer
 
 
 class ChatCompletionsStreamClient:
@@ -99,6 +99,7 @@ def chat_with_tools(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
+    printer: Printer,
     max_tool_rounds: int = 1024,
 ) -> dict[str, Any]:
     """
@@ -108,10 +109,12 @@ def chat_with_tools(
 
     It keeps calling the model until the model returns
     a normal assistant response instead of tool_calls.
+
+    Raises RuntimeError if no final answer is produced within
+    ``max_tool_rounds`` model calls.
     """
 
     for _ in range(max_tool_rounds):
-        printer = get_printer()
         accumulator = StreamAccumulator()
 
         # ====================================================
@@ -132,7 +135,7 @@ def chat_with_tools(
                     printer.response(event["content"])
                 elif event["type"] == "reasoning":
                     printer.thinking(event["content"])
-        print()
+        printer.newline()
 
         # ====================================================
         # 2. Inspect complete response
@@ -183,7 +186,7 @@ def chat_with_tools(
                 )
 
             printer.tool_result(tool_result)
-            print()
+            printer.newline()
 
             # ------------------------------------------------
             # Add tool result to conversation
@@ -200,3 +203,7 @@ def chat_with_tools(
         # ====================================================
         # 6. Loop back to model
         # ====================================================
+
+    raise RuntimeError(
+        f"exceeded {max_tool_rounds} model rounds without a final answer"
+    )

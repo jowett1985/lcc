@@ -6,7 +6,16 @@ from rich.console import Console
 from rich import box
 from agent_loop.agent import chat_with_tools, ChatCompletionsStreamClient
 from agent_loop.tool_calls import ToolRegistry, execute_bash
-from agent_loop.constants import MODEL, TOOLS, BASE_URL, OMLX_API_KEY, TIMEOUT
+from agent_loop.constants import (
+    MODEL,
+    TOOLS,
+    BASE_URL,
+    OMLX_API_KEY,
+    TIMEOUT,
+    SYSTEM,
+)
+from utils.printer import Printer
+from typing import Any
 
 
 def main():
@@ -19,10 +28,11 @@ def main():
     client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT, OMLX_API_KEY)
     registry = ToolRegistry()
     registry.register("bash", execute_bash)
+    printer = Printer()
 
     # REPL.
     print("Enter a task, press Enter to run. Type q to quit.\n")
-    history = []
+    history: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM}]
     while True:
         try:
             query = input("\033[36magent >> \033[0m")
@@ -37,6 +47,7 @@ def main():
             MODEL,
             history,
             TOOLS,
+            printer,
         )
 
 
