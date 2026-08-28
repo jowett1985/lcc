@@ -17,6 +17,10 @@ class ChatCompletionsStreamClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.api_key = api_key
+        self.client = httpx.Client(timeout=self.timeout)
+
+    def close(self):
+        self.client.close()
 
     def stream_chat_completion(
         self,
@@ -56,41 +60,40 @@ class ChatCompletionsStreamClient:
         if temperature is not None:
             payload["temperature"] = temperature
 
-        with httpx.Client(timeout=self.timeout) as client:
-            with client.stream(
-                "POST",
-                url,
-                headers=headers,
-                json=payload,
-            ) as response:
-                if response.is_error:
-                    detail = response.read().decode("utf-8", errors="replace")
-                    raise httpx.HTTPStatusError(
-                        f"{response.status_code} response from {url}: {detail}",
-                        request=response.request,
-                        response=response,
+        with self.client.stream(
+            "POST",
+            url,
+            headers=headers,
+            json=payload,
+        ) as response:
+            if response.is_error:
+                detail = response.read().decode("utf-8", errors="replace")
+                raise httpx.HTTPStatusError(
+                    f"{response.status_code} response from {url}: {detail}",
+                    request=response.request,
+                    response=response,
+                )
+            for line in response.iter_lines():
+                # SSE uses blank lines to separate events.
+                if not line:
+                    continue
+                # We only care about "data:" events.
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:") :].strip()
+                # OpenAI-compatible termination.
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except json.JSONDecodeError as e:
+                    print(
+                        "Invalid SSE JSON:",
+                        data,
+                        e,
                     )
-                for line in response.iter_lines():
-                    # SSE uses blank lines to separate events.
-                    if not line:
-                        continue
-                    # We only care about "data:" events.
-                    if not line.startswith("data:"):
-                        continue
-                    data = line[len("data:") :].strip()
-                    # OpenAI-compatible termination.
-                    if data == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(data)
-                    except json.JSONDecodeError as e:
-                        print(
-                            "Invalid SSE JSON:",
-                            data,
-                            e,
-                        )
-                        continue
-                    yield chunk
+                    continue
+                yield chunk
 
 
 def chat_with_tools(
