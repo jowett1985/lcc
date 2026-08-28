@@ -1,15 +1,10 @@
 import json
-import subprocess
 import httpx
-from rich.table import Table
-from rich.console import Console
-from rich import box
 from typing import Any, Optional, Iterator
 
-from .constants import BASE_URL, SYSTEM, MODEL, TOOLS, MAX_TOKENS, TIMEOUT
 from .accumulators import StreamAccumulator
 from .tool_calls import ToolRegistry, execute_tool_call
-from output.printer import get_printer
+from utils.printer import get_printer
 
 
 class ChatCompletionsStreamClient:
