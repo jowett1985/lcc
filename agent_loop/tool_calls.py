@@ -1,6 +1,23 @@
 import subprocess
+import os
 import json
+import shlex
+import glob as g
+from pathlib import Path
 from typing import Any, Callable
+
+
+BASE_DIR = Path(os.getcwd()).resolve()
+
+
+def safe_path(path: str | Path) -> Path:
+    """
+    Resolves a path and ensures it is within the BASE_DIR.
+    """
+    target_path = Path(path).resolve()
+    if not target_path.is_relative_to(BASE_DIR):
+        raise ValueError(f"Access denied: path {path} is outside the sandbox.")
+    return target_path
 
 
 class ToolRegistry:
@@ -88,7 +105,7 @@ def _truncate(text: str) -> str:
 
 def execute_bash(
     command: str,
-    timeout: int = 30,
+    timeout: int = 30 * 60,
 ) -> dict[str, Any]:
     """
     Execute a bash command and return stdout/stderr/exit code.
@@ -102,9 +119,8 @@ def execute_bash(
 
     try:
         result = subprocess.run(
-            command,
-            shell=True,
-            executable="/bin/bash",
+            shlex.split(command),
+            shell=False,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -126,3 +142,36 @@ def execute_bash(
             "stdout": "",
             "stderr": str(e),
         }
+
+def run_read(path, limit=None):
+    lines = safe_path(path).read_text(encoding="utf-8").splitlines()
+    if limit:
+        lines = lines[:limit]
+    return "\n".join(lines)
+
+def run_write(path, content):
+    safe_path(path).write_text(content, encoding="utf-8")
+    return f"Wrote {len(content)} bytes to {path}"
+
+def run_edit(path, old_text, new_text):
+    text = safe_path(path).read_text(encoding="utf-8")
+    if old_text not in text:
+        return "Error: text not found"
+    safe_path(path).write_text(text.replace(old_text, new_text, 1), encoding="utf-8")
+    return f"Edited {path}"
+
+def run_glob(pattern):
+    all_matches = g.glob(pattern, recursive=True)
+    safe_matches = []
+    for m in all_matches:
+        try:
+            p = safe_path(m)
+            safe_matches.append(str(p))
+        except ValueError:
+            continue
+            
+    matches = sorted(set(safe_matches))
+    shown = matches[:200]
+    if len(matches) > 200:
+        shown.append("... (more matches omitted; narrow the pattern)")
+    return "\n".join(shown)

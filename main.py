@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.console import Console
 from rich import box
 from agent_loop.agent import chat_with_tools, ChatCompletionsStreamClient
-from agent_loop.tool_calls import ToolRegistry, execute_bash
+from agent_loop.tool_calls import ToolRegistry, execute_bash, run_read, run_write, run_edit, run_glob
 from agent_loop.constants import (
     MODEL,
     TOOLS,
@@ -27,6 +27,10 @@ def main():
     client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT)
     registry = ToolRegistry()
     registry.register("bash", execute_bash)
+    registry.register("read_file", run_read)
+    registry.register("write_file", run_write)
+    registry.register("edit_file", run_edit)
+    registry.register("glob", run_glob)
     printer = Printer()
 
     # REPL.
