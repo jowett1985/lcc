@@ -119,8 +119,9 @@ def execute_bash(
 
     try:
         result = subprocess.run(
-            shlex.split(command),
-            shell=False,
+            command,
+            shell=True,
+            executable="/bin/bash",
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -153,11 +154,11 @@ def run_write(path, content):
     safe_path(path).write_text(content, encoding="utf-8")
     return f"Wrote {len(content)} bytes to {path}"
 
-def run_edit(path, old_text, new_text):
+def run_edit(path, old_content, new_content):
     text = safe_path(path).read_text(encoding="utf-8")
-    if old_text not in text:
+    if old_content not in text:
         return "Error: text not found"
-    safe_path(path).write_text(text.replace(old_text, new_text, 1), encoding="utf-8")
+    safe_path(path).write_text(text.replace(old_content, new_content, 1), encoding="utf-8")
     return f"Edited {path}"
 
 def run_glob(pattern):
