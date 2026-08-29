@@ -1,5 +1,6 @@
 import subprocess
 import json
+import shlex
 from typing import Any, Callable
 
 
@@ -91,20 +92,25 @@ def execute_bash(
     timeout: int = 30,
 ) -> dict[str, Any]:
     """
-    Execute a bash command and return stdout/stderr/exit code.
+    Execute a command and return stdout/stderr/exit code.
+
+    Note: This implementation uses shlex to split the command, which
+    means shell features like pipes (|), redirections (>), and
+    environment variables ($VAR) are NOT supported. This is a security
+    measure to prevent command injection.
 
     stdout/stderr are truncated to MAX_TOOL_OUTPUT characters.
 
     WARNING:
-    This executes arbitrary commands with the privileges of
-    the Python process. Only expose this to a trusted model/user.
+    This executes commands with the privileges of the Python process.
+    Only expose this to a trusted model/user.
     """
 
     try:
+        args = shlex.split(command)
         result = subprocess.run(
-            command,
-            shell=True,
-            executable="/bin/bash",
+            args,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=timeout,
