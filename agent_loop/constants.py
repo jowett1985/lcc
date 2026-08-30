@@ -1,9 +1,25 @@
 import os
+import re
+from pathlib import Path
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8080")
 MODEL = os.environ.get("MODEL", "Qwen3.8-27B-4bit")
-TIMEOUT = float(os.environ.get("TIMEOUT", "1024"))
+WORKDIR = Path.cwd()
+TIMEOUT = float(os.environ.get("TIMEOUT", 60 * 60 * 24))
+MAX_TOOL_OUTPUT = 1024 * 8
 SYSTEM = "You are a helpful assistant. Use tools when necessary."
+DENY_LIST = [
+    "rm -rf /",
+    "sudo",
+    "shutdown",
+    "reboot",
+    "mkfs",
+    "dd if=",
+    "> /dev/sda"
+]
+DESTRUCTIVE_COMMAND_WORD = re.compile(
+    r"(?i)(?:^|[;&|()\n])\s*(?:rm|del)(?=\s|$|[;&|()])"
+)
 
 # OpenAI-style tool definition: a single bash tool.
 TOOLS = [

@@ -3,7 +3,7 @@ import httpx
 from typing import Any, Optional, Iterator
 
 from .accumulators import StreamAccumulator
-from .tool_calls import ToolRegistry, execute_tool_call
+from .tool_calls import ToolRegistry, execute_tool_call, check_permission
 from utils.printer import Printer
 
 
@@ -173,6 +173,9 @@ def chat_with_tools(
         # 5. Execute every tool call
         # ====================================================
         for tool_call in tool_calls:
+            if not check_permission(tool_call["function"]):
+                messages.append({"content": "Permission denied."})
+                continue
             tool_call_id = tool_call["id"]
             function_name = tool_call["function"]["name"]
             params = tool_call["function"]["arguments"]

@@ -25,12 +25,14 @@ def main():
     console.print(table)
 
     client = ChatCompletionsStreamClient(BASE_URL, TIMEOUT)
+
     registry = ToolRegistry()
     registry.register("bash", execute_bash)
     registry.register("read_file", run_read)
     registry.register("write_file", run_write)
     registry.register("edit_file", run_edit)
     registry.register("glob", run_glob)
+
     printer = Printer()
 
     # REPL.

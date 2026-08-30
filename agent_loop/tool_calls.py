@@ -1,23 +1,74 @@
 import subprocess
-import os
 import json
-import shlex
 import glob as g
 from pathlib import Path
 from typing import Any, Callable
+from .constants import WORKDIR, TIMEOUT, MAX_TOOL_OUTPUT, DENY_LIST, DESTRUCTIVE_COMMAND_WORD
 
 
-BASE_DIR = Path(os.getcwd()).resolve()
+PERMISSION_RULES = [
+    {
+        "tools": ["read_file", "write_file", "edit_file"],
+        "check": lambda args: not (WORKDIR / json.loads(args)["path"]).resolve().is_relative_to(WORKDIR),
+        "message": "Access outside workspace",
+    },
+    {
+        "tools": ["bash"],
+        "check": lambda args: contains_destructive_command(json.loads(args)["command"]) or any(
+            kw in args for kw in ["rm ", "> /etc/", "chmod 777"]
+        ),
+        "message": "Potentially destructive command",
+    },
+]
 
 
-def safe_path(path: str | Path) -> Path:
-    """
-    Resolves a path and ensures it is within the BASE_DIR.
-    """
-    target_path = Path(path).resolve()
-    if not target_path.is_relative_to(BASE_DIR):
-        raise ValueError(f"Access denied: path {path} is outside the sandbox.")
-    return target_path
+def safe_path(p: str) -> Path:
+    path = (WORKDIR / p).resolve()
+    if not path.is_relative_to(WORKDIR):
+        raise ValueError(f"Path escapes workspace: {p}")
+    return path
+
+
+def check_deny_list(command: str) -> str | None:
+    for pattern in DENY_LIST:
+        if pattern in command:
+            return f"Blocked: '{pattern}' is on the deny list."
+        return None
+
+
+def contains_destructive_command(command: str) -> bool:
+    return bool(DESTRUCTIVE_COMMAND_WORD.search(command))
+
+
+def check_rules(tool_name: str, args: dict) -> str | None:
+    print(f"check_rules. tool_name: {tool_name}, args: {args}")
+    for rule in PERMISSION_RULES:
+        if tool_name in rule["tools"] and rule["check"](args):
+            return rule["message"]
+    return None
+
+
+def check_permission(tool_call) -> bool:
+    if tool_call["name"] == "bash":
+        reason = check_deny_list(tool_call["arguments"])
+        if reason:
+            print(f"\n⛔ {reason}")
+            return False
+
+    reason = check_rules(tool_call["name"], tool_call["arguments"])
+    if reason:
+        decision = ask_user(tool_call["name"], tool_call["arguments"], reason)
+        if decision == "deny":
+            return False
+
+    return True
+
+
+def ask_user(tool_name: str, args: dict, reason: str) -> str:
+    print(f"\n⚠  {reason}")
+    print(f"   Tool: {tool_name}({args})")
+    choice = input("   Allow? [y/N] ").strip().lower()
+    return "allow" if choice in ("y", "yes") else "deny"
 
 
 class ToolRegistry:
@@ -89,11 +140,6 @@ def execute_tool_call(
     )
 
 
-# Cap tool output so a single large result (e.g. `cat bigfile`)
-# cannot blow up the model's context window.
-MAX_TOOL_OUTPUT = 8000
-
-
 def _truncate(text: str) -> str:
     """Keep the head and tail of oversized tool output."""
     if len(text) <= MAX_TOOL_OUTPUT:
@@ -105,7 +151,7 @@ def _truncate(text: str) -> str:
 
 def execute_bash(
     command: str,
-    timeout: int = 30 * 60,
+    timeout: int = TIMEOUT,
 ) -> dict[str, Any]:
     """
     Execute a bash command and return stdout/stderr/exit code.
@@ -122,6 +168,7 @@ def execute_bash(
             command,
             shell=True,
             executable="/bin/bash",
+            cwd=WORKDIR,
             capture_output=True,
             text=True,
             timeout=timeout,
