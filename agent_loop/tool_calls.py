@@ -3,19 +3,28 @@ import json
 import glob as g
 from pathlib import Path
 from typing import Any, Callable
-from .constants import WORKDIR, TIMEOUT, MAX_TOOL_OUTPUT, DENY_LIST, DESTRUCTIVE_COMMAND_WORD
+from .constants import (
+    WORKDIR,
+    TIMEOUT,
+    MAX_TOOL_OUTPUT,
+    DENY_LIST,
+    DESTRUCTIVE_COMMAND_WORD,
+)
 
 
 PERMISSION_RULES = [
     {
         "tools": ["read_file", "write_file", "edit_file"],
-        "check": lambda args: not (WORKDIR / json.loads(args)["path"]).resolve().is_relative_to(WORKDIR),
+        "check": lambda args: (
+            not (WORKDIR / json.loads(args)["path"]).resolve().is_relative_to(WORKDIR)
+        ),
         "message": "Access outside workspace",
     },
     {
         "tools": ["bash"],
-        "check": lambda args: contains_destructive_command(json.loads(args)["command"]) or any(
-            kw in args for kw in ["rm ", "> /etc/", "chmod 777"]
+        "check": lambda args: (
+            contains_destructive_command(json.loads(args)["command"])
+            or any(kw in args for kw in ["rm ", "> /etc/", "chmod 777"])
         ),
         "message": "Potentially destructive command",
     },
@@ -190,22 +199,28 @@ def execute_bash(
             "stderr": str(e),
         }
 
+
 def run_read(path, limit=None):
     lines = safe_path(path).read_text(encoding="utf-8").splitlines()
     if limit:
         lines = lines[:limit]
     return "\n".join(lines)
 
+
 def run_write(path, content):
     safe_path(path).write_text(content, encoding="utf-8")
     return f"Wrote {len(content)} bytes to {path}"
+
 
 def run_edit(path, old_content, new_content):
     text = safe_path(path).read_text(encoding="utf-8")
     if old_content not in text:
         return "Error: text not found"
-    safe_path(path).write_text(text.replace(old_content, new_content, 1), encoding="utf-8")
+    safe_path(path).write_text(
+        text.replace(old_content, new_content, 1), encoding="utf-8"
+    )
     return f"Edited {path}"
+
 
 def run_glob(pattern):
     all_matches = g.glob(pattern, recursive=True)
@@ -216,7 +231,7 @@ def run_glob(pattern):
             safe_matches.append(str(p))
         except ValueError:
             continue
-            
+
     matches = sorted(set(safe_matches))
     shown = matches[:200]
     if len(matches) > 200:

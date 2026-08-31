@@ -8,15 +8,7 @@ WORKDIR = Path.cwd()
 TIMEOUT = float(os.environ.get("TIMEOUT", 60 * 60 * 24))
 MAX_TOOL_OUTPUT = 1024 * 8
 SYSTEM = "You are a helpful assistant. Use tools when necessary."
-DENY_LIST = [
-    "rm -rf /",
-    "sudo",
-    "shutdown",
-    "reboot",
-    "mkfs",
-    "dd if=",
-    "> /dev/sda"
-]
+DENY_LIST = ["rm -rf /", "sudo", "shutdown", "reboot", "mkfs", "dd if=", "> /dev/sda"]
 DESTRUCTIVE_COMMAND_WORD = re.compile(
     r"(?i)(?:^|[;&|()\n])\s*(?:rm|del)(?=\s|$|[;&|()])"
 )
@@ -44,7 +36,7 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "path": {"type": "string"},
-                    "limit": {"type": "integer"}
+                    "limit": {"type": "integer"},
                 },
                 "required": ["path"],
             },
@@ -59,7 +51,7 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "path": {"type": "string"},
-                    "content": {"type": "string"}
+                    "content": {"type": "string"},
                 },
                 "required": ["path", "content"],
             },
@@ -75,7 +67,7 @@ TOOLS = [
                 "properties": {
                     "path": {"type": "string"},
                     "old_content": {"type": "string"},
-                    "new_content": {"type": "string"}
+                    "new_content": {"type": "string"},
                 },
                 "required": ["path", "old_content", "new_content"],
             },
@@ -88,9 +80,7 @@ TOOLS = [
             "description": "Find files by pattern.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "pattern": {"type": "string"}
-                },
+                "properties": {"pattern": {"type": "string"}},
                 "required": ["pattern"],
             },
         },

@@ -5,7 +5,14 @@ from rich.table import Table
 from rich.console import Console
 from rich import box
 from agent_loop.agent import chat_with_tools, ChatCompletionsStreamClient
-from agent_loop.tool_calls import ToolRegistry, execute_bash, run_read, run_write, run_edit, run_glob
+from agent_loop.tool_calls import (
+    ToolRegistry,
+    execute_bash,
+    run_read,
+    run_write,
+    run_edit,
+    run_glob,
+)
 from agent_loop.constants import (
     MODEL,
     TOOLS,
@@ -41,7 +48,7 @@ def main():
     while True:
         try:
             query = input("\033[36magent >> \033[0m")
-        except (EOFError, KeyboardInterrupt):
+        except EOFError, KeyboardInterrupt:
             break
         if query.strip().lower() in ("q", "exit", ""):
             break

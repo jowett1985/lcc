@@ -179,7 +179,11 @@ def chat_with_tools(
                     {
                         "role": "tool",
                         "tool_call_id": (tool_call_id),
-                        "content": "Error: the user rejected the execution of this command. You need to inform the user and must not work around it by any other means."
+                        "content": (
+                            "The user rejected the execution of this command. "
+                            "You need to inform the user and must not work "
+                            "around it by any other means."
+                        ),
                     }
                 )
                 continue
