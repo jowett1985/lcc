@@ -173,10 +173,16 @@ def chat_with_tools(
         # 5. Execute every tool call
         # ====================================================
         for tool_call in tool_calls:
-            if not check_permission(tool_call["function"]):
-                messages.append({"content": "Permission denied."})
-                continue
             tool_call_id = tool_call["id"]
+            if not check_permission(tool_call["function"]):
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": (tool_call_id),
+                        "content": "Error: the user rejected the execution of this command. You need to inform the user and must not work around it by any other means."
+                    }
+                )
+                continue
             function_name = tool_call["function"]["name"]
             params = tool_call["function"]["arguments"]
             printer.tool_name(f"{function_name} {params}")

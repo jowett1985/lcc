@@ -41,7 +41,6 @@ def contains_destructive_command(command: str) -> bool:
 
 
 def check_rules(tool_name: str, args: dict) -> str | None:
-    print(f"check_rules. tool_name: {tool_name}, args: {args}")
     for rule in PERMISSION_RULES:
         if tool_name in rule["tools"] and rule["check"](args):
             return rule["message"]
